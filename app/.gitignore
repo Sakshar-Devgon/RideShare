@@ -1,0 +1,28 @@
+# Gradle build folders
+/build
+.gradle/
+
+# Android Studio/IDE files
+.idea/
+*.iml
+
+# Kotlin/Jetpack Compose compiler cache
+.kotlinc/
+.cxx/
+
+# Local configuration files
+/local.properties
+
+# Firebase config (private)
+**/google-services.json
+
+# Keystore (used for signing APKs)
+*.jks
+*.keystore
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

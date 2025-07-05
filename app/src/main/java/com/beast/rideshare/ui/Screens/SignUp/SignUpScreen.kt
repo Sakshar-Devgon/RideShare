@@ -33,7 +33,6 @@ fun SignUpScreen(navController: NavController, authViewModel: AuthViewModel) {
     LaunchedEffect(authState.value) {
         when (val state = authState.value) {
             is AuthState.Authenticated -> {
-                Toast.makeText(context, "Signup Successful", Toast.LENGTH_SHORT).show()
                 navController.navigate("home") {
                     popUpTo("SignUp") { inclusive = true }
                 }

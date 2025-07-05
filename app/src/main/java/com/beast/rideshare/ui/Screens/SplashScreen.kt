@@ -12,11 +12,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.beast.rideconnect.AuthViewModel
 import com.beast.rideshare.R
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(navController: NavController) {
+fun SplashScreen(navController: NavController,  authViewModel: AuthViewModel) {
     // Animation states
     var scale by remember { mutableStateOf(0.6f) }
     var alpha by remember { mutableStateOf(0f) }
@@ -42,7 +43,7 @@ fun SplashScreen(navController: NavController) {
         alpha = 0f
         delay(800)
         // Navigate to the next screen here
-        navController.navigate("sign_in") {
+        navController.navigate("SignIn") {
             popUpTo("splash") { inclusive = true }
         }
     }

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.beast.rideconnect.AuthState
 import com.beast.rideconnect.AuthViewModel
-import com.beast.rideshare.ui.Navigation.Routes
+import com.beast.rideshare.Navigation.Routes
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,7 +86,7 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
 
             Button(
                 onClick = {
-                   // Navigate to Offer Ride screen
+                    navController.navigate(Routes.OfferRide.route)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,7 +112,7 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
 
             Button(
                 onClick = {
-                    // Navigate to Find Ride screen
+                    navController.navigate(Routes.FindRide.route)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

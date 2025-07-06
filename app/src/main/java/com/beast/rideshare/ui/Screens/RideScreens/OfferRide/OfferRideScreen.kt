@@ -92,7 +92,7 @@ fun OfferRideScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            if (user != null && pickupAddress != null && dropAddress != null) {
+            if (user != null && pickupAddress != null && dropAddress != null && phoneNumber.isNotBlank()) {
                 rideViewModel.uploadRide(
                     from = pickupAddress,
                     to = dropAddress,
@@ -100,6 +100,7 @@ fun OfferRideScreen(
                     time = time,
                     seatsAvailable = seats.toIntOrNull() ?: 1,
                     notes = note,
+                    phoneNumber = phoneNumber, // ✅ now passed correctly
                     onSuccess = {
                         Toast.makeText(context, "Ride Offered Successfully!", Toast.LENGTH_SHORT).show()
                         locationViewModel.pickupAddress = null
@@ -111,7 +112,11 @@ fun OfferRideScreen(
                     }
                 )
             } else {
-                Toast.makeText(context, "Please select pickup and drop locations first.", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    "Please fill all required fields (locations and phone number).",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }) {
             Text("Post Ride")

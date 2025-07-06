@@ -43,6 +43,21 @@ import org.osmdroid.views.overlay.Polyline
 import java.io.File
 import java.util.*
 
+fun getAddressFromLocation(context: Context, location: Location): String {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+        if (!addresses.isNullOrEmpty()) {
+            addresses[0].getAddressLine(0) ?: "Unknown Address"
+        } else {
+            "Unknown Address"
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        "Unknown Address"
+    }
+}
+
 @SuppressLint("ClickableViewAccessibility")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,7 +101,7 @@ fun OSMMapScreen(
         ) {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 currentLocation = location ?: Location("").apply {
-                    latitude = 28.6139  // Delhi fallback
+                    latitude = 28.6139
                     longitude = 77.2090
                 }
             }
@@ -106,8 +121,10 @@ fun OSMMapScreen(
             currentLocation == null -> CircularProgressIndicator()
             else -> {
                 val userGeoPoint = GeoPoint(currentLocation!!.latitude, currentLocation!!.longitude)
+
+                // ✅ Set pickup location and readable address
                 rideLocationViewModel.pickupLocation = userGeoPoint
-                rideLocationViewModel.pickupAddress = "Your Location"
+                rideLocationViewModel.pickupAddress = getAddressFromLocation(context, currentLocation!!)
 
                 Column(modifier = Modifier.fillMaxSize()) {
                     Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {

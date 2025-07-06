@@ -83,8 +83,7 @@
                                         acceptorName = acceptorName,
                                         acceptorPhone = acceptorPhone,
                                         onSuccess = {
-                                            Toast.makeText(context, "Ride Accepted!", Toast.LENGTH_SHORT).show()
-                                            navController.navigate(Routes.Home.route)
+                                            navController.navigate(Routes.RideDetail.createRoute(ride.rideId))
                                         },
                                         onFailure = { error ->
                                             Toast.makeText(context, error, Toast.LENGTH_SHORT).show()

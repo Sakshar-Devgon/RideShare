@@ -1,12 +1,15 @@
 package com.beast.rideshare.Navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.beast.rideconnect.AuthViewModel
 import com.beast.rideconnect.ui.screens.auth.SignInScreen
 import com.beast.rideconnect.ui.screens.auth.SignUpScreen
@@ -79,6 +82,18 @@ fun AppNavHost(
         composable(Routes.RideHistory.route) {
             RideHistoryScreen()
         }
+        composable(
+            route = Routes.RideDetail.route,
+            arguments = listOf(navArgument("rideId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val rideId = backStackEntry.arguments?.getString("rideId")
+            if (rideId != null) {
+                RideDetailScreen(rideId = rideId)
+            } else {
+                Text("Error loading ride details")
+            }
+        }
+
 
     }
 }

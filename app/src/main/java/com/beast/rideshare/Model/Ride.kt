@@ -13,6 +13,11 @@ data class Ride(
     // For acceptance tracking
     val rideId: String = "", // Firestore document ID
     val accepted: Boolean = false,
-    val acceptedByName: String? = null,
-    val acceptedByPhone: String? = null
-)
+//    val acceptedByName: String? = null,
+    val acceptedByPhone: String? = null,
+    val offeredByName: String = "",
+    val acceptedByName: String = "",
+    val offeredBy: String = "",
+    val acceptedBy: String = "",
+
+    )

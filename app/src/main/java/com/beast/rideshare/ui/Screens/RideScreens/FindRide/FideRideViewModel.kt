@@ -3,14 +3,14 @@ package com.beast.rideshare.ui.Screens.RideScreens.FindRide
 import androidx.lifecycle.ViewModel
 import com.beast.rideshare.Model.Ride
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.*
+import com.google.firebase.firestore.FirebaseFirestore
 
 class FindRideViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
     private val ridesCollection = db.collection("rides")
 
-    // ✅ Fetch all rides with document ID
+    // ✅ Fetch all available rides
     fun fetchAllRides(
         onSuccess: (List<Ride>) -> Unit,
         onFailure: (String) -> Unit
@@ -28,7 +28,7 @@ class FindRideViewModel : ViewModel() {
             }
     }
 
-    // ✅ Accept a ride
+    // ✅ Accept a ride and correctly store acceptor info
     fun acceptRide(
         rideId: String,
         acceptorName: String,
@@ -36,8 +36,15 @@ class FindRideViewModel : ViewModel() {
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            onFailure("User not logged in.")
+            return
+        }
+
         val data = mapOf(
             "accepted" to true,
+            "acceptedBy" to currentUser.uid,
             "acceptedByName" to acceptorName,
             "acceptedByPhone" to acceptorPhone
         )
@@ -45,9 +52,12 @@ class FindRideViewModel : ViewModel() {
         ridesCollection.document(rideId)
             .update(data)
             .addOnSuccessListener { onSuccess() }
-            .addOnFailureListener { e -> onFailure(e.message ?: "Failed to accept ride") }
+            .addOnFailureListener { e ->
+                onFailure(e.message ?: "Failed to accept ride")
+            }
     }
 
+    // Optional utility function
     fun currentUserPhoneNumber(): String {
         return FirebaseAuth.getInstance().currentUser?.phoneNumber ?: "Not Provided"
     }

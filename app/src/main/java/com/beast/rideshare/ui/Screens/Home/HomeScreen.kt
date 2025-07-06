@@ -53,6 +53,13 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
                         onDismissRequest = { expanded = false }
                     ) {
                         DropdownMenuItem(
+                            text = { Text("Ride History") },
+                            onClick = {
+                                expanded = false
+                                navController.navigate(Routes.RideHistory.route)
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Logout") },
                             onClick = {
                                 expanded = false

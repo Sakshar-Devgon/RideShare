@@ -1,4 +1,4 @@
-package com.beast.rideshare.ui.Screens.RideScreens.OfferRides
+package com.beast.rideshare.ui.Screens.RideScreens.OfferRide
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -9,9 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.beast.rideshare.Model.Ride
 import com.beast.rideshare.Navigation.Routes
-import com.beast.rideshare.ui.Screens.RideScreens.OfferRide.RideLocationViewModel
+import com.beast.rideshare.ui.Screens.RideScreens.OfferRides.RideViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -49,7 +48,7 @@ fun OfferRideScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(onClick = {
-            navController.navigate(Routes.OSMMap.route) // ✅ Navigate to map to select pickup/drop
+            navController.navigate(Routes.OSMMap.route)
         }) {
             Text("Select Location on Map")
         }
@@ -94,24 +93,18 @@ fun OfferRideScreen(
 
         Button(onClick = {
             if (user != null && pickupAddress != null && dropAddress != null) {
-                val ride = Ride(
-                    userId = user.uid,
-                    userName = user.displayName ?: user.email ?: "Rider",
-                    phoneNumber = phoneNumber,
+                rideViewModel.uploadRide(
                     from = pickupAddress,
                     to = dropAddress,
                     date = date,
                     time = time,
                     seatsAvailable = seats.toIntOrNull() ?: 1,
-                    notes = note
-                )
-                rideViewModel.uploadRide(
-                    ride,
+                    notes = note,
                     onSuccess = {
                         Toast.makeText(context, "Ride Offered Successfully!", Toast.LENGTH_SHORT).show()
                         locationViewModel.pickupAddress = null
                         locationViewModel.dropAddress = null
-                        navController.navigate(Routes.WaitingScreen.route) // ✅ Navigate to Waiting Room
+                        navController.navigate(Routes.WaitingScreen.route)
                     },
                     onFailure = { error ->
                         Toast.makeText(context, "Error: $error", Toast.LENGTH_LONG).show()
@@ -128,7 +121,7 @@ fun OfferRideScreen(
 
         Button(
             onClick = {
-                navController.navigate(Routes.WaitingScreen.route) // ✅ Manual access to waiting room
+                navController.navigate(Routes.WaitingScreen.route)
             }
         ) {
             Text(text = "Go to Waiting Room")

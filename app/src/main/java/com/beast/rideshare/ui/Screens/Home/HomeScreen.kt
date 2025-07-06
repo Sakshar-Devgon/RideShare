@@ -1,4 +1,4 @@
-package com.beast.rideshare.ui.screens.home
+package com.beast.rideshare.ui.Screens.Home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.beast.rideconnect.AuthState
 import com.beast.rideconnect.AuthViewModel
@@ -28,7 +30,7 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
     LaunchedEffect(Unit) {
         val user = FirebaseAuth.getInstance().currentUser
         user?.reload()?.addOnSuccessListener {
-            displayName = user.displayName
+            displayName = user.displayName ?: user.email?.split("@")?.firstOrNull()
         }
     }
 
@@ -82,12 +84,18 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Welcome ${displayName ?: "Rider"}",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    color = Color(0xFF8C52FF)
+            if (displayName == null) {
+                CircularProgressIndicator()
+            } else {
+                Text(
+                    text = "Welcome ${displayName}",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        color = Color(0xFF8C52FF),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 26.sp
+                    )
                 )
-            )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 

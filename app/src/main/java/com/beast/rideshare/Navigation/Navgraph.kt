@@ -16,12 +16,12 @@ import com.beast.rideconnect.ui.screens.auth.SignUpScreen
 import com.beast.rideshare.RideDetailScreen
 import com.beast.rideshare.RideHistoryScreen
 import com.beast.rideshare.WaitingScreen
+import com.beast.rideshare.ui.Screens.Home.HomeScreen
 import com.beast.rideshare.ui.Screens.MapScreen.OSMMapScreen
 import com.beast.rideshare.ui.Screens.RideScreens.FindRide.FindRideScreen
 import com.beast.rideshare.ui.Screens.RideScreens.FindRide.FindRideViewModel
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRide.OfferRideScreen
 import com.beast.rideshare.ui.Screens.SplashScreen
-import com.beast.rideshare.ui.screens.home.HomeScreen
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRides.RideViewModel
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRide.RideLocationViewModel
 

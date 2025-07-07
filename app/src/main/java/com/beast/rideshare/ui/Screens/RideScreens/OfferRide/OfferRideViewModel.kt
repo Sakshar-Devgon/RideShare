@@ -11,7 +11,7 @@ class RideViewModel : ViewModel() {
     private val ridesCollection = firestore.collection("rides")
     private val historyCollection = firestore.collection("rideHistory")
 
-    // ✅ Upload ride with full user info including entered phone number
+    // ✅ Upload ride with full user info including entered phone number and amount
     fun uploadRide(
         from: String,
         to: String,
@@ -19,7 +19,8 @@ class RideViewModel : ViewModel() {
         time: String,
         seatsAvailable: Int,
         notes: String,
-        phoneNumber: String, // ✅ Accept phone number from UI
+        phoneNumber: String,
+        amount: String, // ✅ NEW: Accept ride amount from UI
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
@@ -34,13 +35,14 @@ class RideViewModel : ViewModel() {
         val ride = Ride(
             userId = currentUser.uid,
             userName = currentUser.displayName ?: currentUser.email ?: "Unknown User",
-            phoneNumber = phoneNumber, // ✅ Use the entered number from UI
+            phoneNumber = phoneNumber,
             from = from,
             to = to,
             date = date,
             time = time,
             seatsAvailable = seatsAvailable,
             notes = notes,
+            amount = amount, // ✅ NEW: Save amount in Ride
             rideId = rideId,
             accepted = false,
             acceptedBy = "",

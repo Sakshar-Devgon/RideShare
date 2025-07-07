@@ -1,15 +1,21 @@
 package com.beast.rideshare
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.beast.rideshare.Model.Ride
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRides.RideViewModel
+import com.beast.rideshare.Navigation.Routes
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
@@ -23,7 +29,12 @@ fun WaitingScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // 🔁 Load user's rides
+    // ⬅️ Back press navigates to Home
+    BackHandler {
+        navController.popBackStack()
+        navController.navigate(Routes.Home.route)
+    }
+
     LaunchedEffect(userId) {
         userId?.let {
             rideViewModel.getUserRides(it) { rides ->
@@ -39,36 +50,45 @@ fun WaitingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text("Ride Status", style = MaterialTheme.typography.headlineSmall)
+                Text(
+                    "🚗 Your Ride Status",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             if (userRides.isEmpty()) {
                 item {
-                    Text("You haven't offered any rides yet.")
+                    Text("😕 You haven't offered any rides yet.", fontSize = 16.sp)
                 }
             } else {
                 items(userRides) { ride ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F0F0)),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("From: ${ride.from}")
-                            Text("To: ${ride.to}")
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("📍 From:", fontWeight = FontWeight.Medium, color = Color.Gray)
+                            Text(ride.from, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text("🏁 To:", fontWeight = FontWeight.Medium, color = Color.Gray)
+                            Text(ride.to, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             if (ride.accepted && ride.acceptedByName.isNotEmpty() && ride.acceptedByPhone != null) {
-                                Text("🎉 Ride accepted!", style = MaterialTheme.typography.bodyLarge)
-                                Text("Accepted by: ${ride.acceptedByName}")
-                                Text("Phone: ${ride.acceptedByPhone}")
+                                Text("✅ Ride Accepted!", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                Text("👤 Accepted by: ${ride.acceptedByName}")
+                                Text("📞 Phone: ${ride.acceptedByPhone}")
 
-                                // ✅ Only the user who offered the ride can complete it
                                 if (ride.userId == userId) {
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Button(
@@ -79,7 +99,6 @@ fun WaitingScreen(
                                                     coroutineScope.launch {
                                                         snackbarHostState.showSnackbar("✅ Ride completed and moved to history.")
                                                     }
-                                                    // Refresh rides
                                                     rideViewModel.getUserRides(userId!!) { rides ->
                                                         userRides = rides
                                                     }
@@ -90,13 +109,19 @@ fun WaitingScreen(
                                                     }
                                                 }
                                             )
-                                        }
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C52FF))
                                     ) {
-                                        Text("Ride Completed")
+                                        Text("🎯 Mark Ride as Completed")
                                     }
                                 }
                             } else {
-                                Text("⏳ Waiting for a rider to accept...", style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "⏳ Waiting for a rider to accept...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.DarkGray
+                                )
                             }
                         }
                     }

@@ -55,10 +55,10 @@ fun SignUpScreen(navController: NavController, authViewModel: AuthViewModel) {
         Image(
             painter = painterResource(id = R.drawable.ride_connect),
             contentDescription = null,
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier.size(300.dp)
         )
         Text(
-            text = "RideConnect",
+            text = "RideShare",
             style = MaterialTheme.typography.headlineLarge.copy(
                 color = Color(0xFF8C52FF),
                 fontWeight = FontWeight.Bold

@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.beast.rideconnect.AuthState
@@ -51,10 +52,10 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
         Image(
             painter = painterResource(id = R.drawable.ride_connect),
             contentDescription = null,
-            modifier = Modifier.size(200.dp)
+            modifier = Modifier.size(300.dp)
         )
         Text(
-            text = "RideConnect",
+            text = "RideShare",
             style = MaterialTheme.typography.headlineLarge.copy(
                 color = Color(0xFF8C52FF),
                 fontWeight = FontWeight.Bold
@@ -101,7 +102,9 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                 popUpTo("SignIn") { inclusive = true }
             }
         }) {
-            Text("Don't have an account? Sign Up")
+            Text(
+                "Don't have an account? Sign Up",
+            )
         }
     }
 }

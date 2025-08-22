@@ -48,7 +48,9 @@ fun FindRideScreen(
                         fontSize = 20.sp
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { innerPadding ->
@@ -66,7 +68,7 @@ fun FindRideScreen(
                 Spacer(modifier = Modifier.height(100.dp))
                 Text(
                     text = "🚫 No rides available",
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -84,18 +86,32 @@ fun FindRideScreen(
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         elevation = CardDefaults.cardElevation(4.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("📍 From: ${ride.from}", fontWeight = FontWeight.SemiBold)
-                            Text("🏁 To: ${ride.to}", fontWeight = FontWeight.SemiBold)
+                            Text("📍 From: ${ride.from}",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface)
+                            Text("🏁 To: ${ride.to}",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("📅 Date: ${ride.date}", color = Color.Gray)
-                            Text("⏰ Time: ${ride.time}", color = Color.Gray)
-                            Text("🪑 Seats: ${ride.seatsAvailable}", color = Color.Gray)
-                            Text("👤 Posted by: ${ride.userName}", color = Color.Gray)
+                            Text("📅 Date: ${ride.date}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("⏰ Time: ${ride.time}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("🪑 Seats: ${ride.seatsAvailable}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("👤 Posted by: ${ride.userName}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                            // Show ride type indicator
+                            if (ride.rideType == "femaleOnly") {
+                                Text(
+                                    "👩 Female Only Ride",
+                                    color = Color(0xFFE91E63),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                )
+                            }
 
                             if (ride.amount.isNotBlank()) {
                                 Text(

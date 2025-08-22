@@ -5,11 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
 import com.beast.rideconnect.AuthViewModel
 import com.beast.rideshare.Navigation.AppNavHost
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRide.RideLocationViewModel
 import com.beast.rideshare.ui.theme.RideShareTheme
+import com.beast.rideshare.ui.theme.ThemeManager
 
 class MainActivity : ComponentActivity() {
 
@@ -20,11 +22,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            RideShareTheme {
+            val themeManager = remember { ThemeManager(this) }
+            RideShareTheme(darkTheme = themeManager.isDarkMode) {
                 val navController = rememberNavController()
                 AppNavHost(
                     navController = navController,
-                    authViewModel = authViewModel
+                    authViewModel = authViewModel,
+                    themeManager = themeManager
                 )
             }
         }

@@ -60,6 +60,9 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
                 actions = {
                     IconButton(onClick = { expanded = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Menu")
@@ -68,6 +71,13 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Profile & Settings") },
+                            onClick = {
+                                expanded = false
+                                navController.navigate(Routes.Profile.route)
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Ride History") },
                             onClick = {
@@ -96,7 +106,10 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
                 .padding(paddingValues)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.White, Color(0xFFF5F5F5))
+                        colors = listOf(
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surfaceVariant
+                        )
                     )
                 ),
             contentAlignment = Alignment.Center
@@ -114,7 +127,7 @@ fun HomeScreen(navController: NavController, authViewModel: AuthViewModel) {
                     Text(
                         text = "Welcome $displayName!",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            color = Color(0xFF8C52FF),
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 30.sp
                         )
@@ -156,7 +169,7 @@ fun GradientButton(text: String, onClick: () -> Unit) {
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
-            contentColor = Color.White
+            contentColor = MaterialTheme.colorScheme.onPrimary
         ),
         contentPadding = PaddingValues(),
         elevation = ButtonDefaults.buttonElevation(
@@ -170,7 +183,10 @@ fun GradientButton(text: String, onClick: () -> Unit) {
                 .fillMaxSize()
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color(0xFF8C52FF), Color(0xFFB67BFF))
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary
+                        )
                     ),
                     shape = RoundedCornerShape(20.dp)
                 )

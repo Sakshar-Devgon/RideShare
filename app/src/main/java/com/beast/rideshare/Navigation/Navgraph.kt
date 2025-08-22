@@ -25,17 +25,21 @@ import com.beast.rideshare.ui.Screens.RideScreens.OfferRide.OfferRideScreen
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRide.RideLocationViewModel
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRides.RideViewModel
 import com.beast.rideshare.ui.Screens.SplashScreen
+import com.beast.rideshare.ui.Screens.Profile.ProfileScreen
+import com.beast.rideshare.ui.Screens.Profile.ProfileViewModel
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    themeManager: com.beast.rideshare.ui.theme.ThemeManager,
     modifier: Modifier = Modifier
 ) {
     val rideViewModel: RideViewModel = viewModel()
     val locationViewModel: RideLocationViewModel = viewModel()
     val findRideViewModel: FindRideViewModel = viewModel()
+    val profileViewModel: ProfileViewModel = viewModel()
 
     val springSpec = spring<IntOffset>(
         dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -93,10 +97,13 @@ fun AppNavHost(
             OSMMapScreen(navController, locationViewModel, modifier = modifier.fillMaxSize())
         }
         composable(Routes.WaitingScreen.route) {
-            WaitingScreen(navController = navController, rideViewModel = rideViewModel)
+            WaitingScreen(rideViewModel = rideViewModel, navController = navController)
         }
         composable(Routes.RideHistory.route) {
             RideHistoryScreen()
+        }
+        composable(Routes.Profile.route) {
+            ProfileScreen(navController, profileViewModel, themeManager)
         }
         composable(
             route = Routes.RideDetail.route,

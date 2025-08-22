@@ -2,6 +2,7 @@ package com.beast.rideshare.ui.Screens.RideScreens.OfferRides
 
 import androidx.lifecycle.ViewModel
 import com.beast.rideshare.Model.Ride
+import com.beast.rideshare.Model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -10,6 +11,7 @@ class RideViewModel : ViewModel() {
     private val firestore = FirebaseFirestore.getInstance()
     private val ridesCollection = firestore.collection("rides")
     private val historyCollection = firestore.collection("rideHistory")
+    private val usersCollection = firestore.collection("users")
 
     // ✅ Upload ride with full user info including entered phone number and amount
     fun uploadRide(
@@ -30,33 +32,49 @@ class RideViewModel : ViewModel() {
             return
         }
 
-        val rideId = ridesCollection.document().id
+        // First, get user profile to determine ride type
+        usersCollection.document(currentUser.uid)
+            .get()
+            .addOnSuccessListener { document ->
+                val userProfile = document.toObject(User::class.java)
+                val rideType = if (userProfile?.femaleMode == true && userProfile.gender == "female") {
+                    "femaleOnly"
+                } else {
+                    "normal"
+                }
 
-        val ride = Ride(
-            userId = currentUser.uid,
-            userName = currentUser.displayName ?: currentUser.email ?: "Unknown User",
-            phoneNumber = phoneNumber,
-            from = from,
-            to = to,
-            date = date,
-            time = time,
-            seatsAvailable = seatsAvailable,
-            notes = notes,
-            amount = amount, // ✅ NEW: Save amount in Ride
-            rideId = rideId,
-            accepted = false,
-            acceptedBy = "",
-            acceptedByName = "",
-            acceptedByPhone = "",
-            offeredBy = currentUser.uid,
-            offeredByName = currentUser.displayName ?: currentUser.email ?: "Unknown User"
-        )
+                val rideId = ridesCollection.document().id
 
-        ridesCollection.document(rideId)
-            .set(ride)
-            .addOnSuccessListener { onSuccess() }
+                val ride = Ride(
+                    userId = currentUser.uid,
+                    userName = currentUser.displayName ?: currentUser.email ?: "Unknown User",
+                    phoneNumber = phoneNumber,
+                    from = from,
+                    to = to,
+                    date = date,
+                    time = time,
+                    seatsAvailable = seatsAvailable,
+                    notes = notes,
+                    amount = amount, // ✅ NEW: Save amount in Ride
+                    rideType = rideType, // ✅ NEW: Set ride type based on user profile
+                    rideId = rideId,
+                    accepted = false,
+                    acceptedBy = "",
+                    acceptedByName = "",
+                    acceptedByPhone = "",
+                    offeredBy = currentUser.uid,
+                    offeredByName = currentUser.displayName ?: currentUser.email ?: "Unknown User"
+                )
+
+                ridesCollection.document(rideId)
+                    .set(ride)
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener { exception ->
+                        onFailure(exception.message ?: "Unknown error")
+                    }
+            }
             .addOnFailureListener { exception ->
-                onFailure(exception.message ?: "Unknown error")
+                onFailure("Failed to load user profile: ${exception.message}")
             }
     }
 

@@ -69,23 +69,47 @@ fun WaitingScreen(
                 items(userRides) { ride ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F0F0)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
                         shape = RoundedCornerShape(16.dp),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("📍 From:", fontWeight = FontWeight.Medium, color = Color.Gray)
-                            Text(ride.from, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = "📍 From:",
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = ride.from,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("🏁 To:", fontWeight = FontWeight.Medium, color = Color.Gray)
-                            Text(ride.to, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = "🏁 To:",
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = ride.to,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
                             Spacer(modifier = Modifier.height(12.dp))
 
                             if (ride.accepted && ride.acceptedByName.isNotEmpty() && ride.acceptedByPhone != null) {
-                                Text("✅ Ride Accepted!", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "✅ Ride Accepted!",
+                                    color = Color(0xFF4CAF50), // Green that works in both themes
+                                    fontWeight = FontWeight.Bold
+                                )
                                 Text("👤 Accepted by: ${ride.acceptedByName}")
                                 Text("📞 Phone: ${ride.acceptedByPhone}")
 
@@ -111,7 +135,7 @@ fun WaitingScreen(
                                             )
                                         },
                                         shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8C52FF))
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                                     ) {
                                         Text("🎯 Mark Ride as Completed")
                                     }
@@ -120,7 +144,7 @@ fun WaitingScreen(
                                 Text(
                                     "⏳ Waiting for a rider to accept...",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.DarkGray
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

@@ -19,7 +19,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -59,26 +71,26 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
 
-    implementation ("com.google.firebase:firebase-auth-ktx")
+    // Firebase BOM - use single version
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
     // ViewModel and LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
 
-// For using LiveData inside Compose
+    // For using LiveData inside Compose
     implementation("androidx.compose.runtime:runtime-livedata:1.6.7")
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("org.osmdroid:osmdroid-android:6.1.16")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation ("org.osmdroid:osmdroid-android:6.1.16")
-    implementation ("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    // Google Play Services - single declaration
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // Accompanist Navigation Animation for Compose
     implementation("com.google.accompanist:accompanist-navigation-animation:0.33.2-alpha")

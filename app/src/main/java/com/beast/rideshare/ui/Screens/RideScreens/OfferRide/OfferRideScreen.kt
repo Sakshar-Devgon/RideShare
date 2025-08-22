@@ -1,7 +1,11 @@
 package com.beast.rideshare.ui.Screens.RideScreens.OfferRide
 
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -10,14 +14,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavController
+import java.text.SimpleDateFormat
+import java.util.*
 import com.beast.rideshare.Navigation.Routes
 import com.beast.rideshare.ui.Screens.RideScreens.OfferRides.RideViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -32,13 +40,27 @@ fun OfferRideScreen(
     val context = LocalContext.current
     val user = FirebaseAuth.getInstance().currentUser
 
-    var date by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
+    // Auto-set current date
+    val currentDate = remember {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
+    }
+    var date by remember { mutableStateOf(currentDate) }
+    var selectedHour by remember { mutableStateOf(12) }
+    var selectedMinute by remember { mutableStateOf(0) }
+    var isAM by remember { mutableStateOf(true) }
     var seats by remember { mutableStateOf("1") }
     var note by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    // Format time for display and storage
+    val formattedTime = remember(selectedHour, selectedMinute, isAM) {
+        val hour12 = if (selectedHour == 0) 12 else selectedHour
+        val amPm = if (isAM) "AM" else "PM"
+        String.format("%02d:%02d %s", hour12, selectedMinute, amPm)
+    }
 
     val pickupAddress = locationViewModel.pickupAddress
     val dropAddress = locationViewModel.dropAddress
@@ -48,10 +70,10 @@ fun OfferRideScreen(
     val textFieldModifier = Modifier.fillMaxWidth()
     val textFieldShape: Shape = RoundedCornerShape(12.dp)
     val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = Color(0xFF8C52FF),
-        unfocusedBorderColor = Color.Gray,
-        cursorColor = Color(0xFF8C52FF),
-        focusedLabelColor = Color(0xFF8C52FF)
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        cursorColor = MaterialTheme.colorScheme.primary,
+        focusedLabelColor = MaterialTheme.colorScheme.primary
     )
 
     Scaffold(
@@ -79,87 +101,259 @@ fun OfferRideScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp)
+                .padding(20.dp)
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Header
             Text(
-                text = "Fill Ride Details",
+                text = "Create Ride Offer",
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    color = Color(0xFF8C52FF),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
 
-            Text("Pickup: ${pickupAddress ?: "Not Selected"}")
-            Text("Drop: ${dropAddress ?: "Not Selected"}")
-
-            Button(
-                onClick = { navController.navigate(Routes.OSMMap.route) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8C52FF),
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth()
+            // Location Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(4.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Select Location on Map")
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Route",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    )
+
+                    Text(
+                        text = "From: ${pickupAddress ?: "Not Selected"}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "To: ${dropAddress ?: "Not Selected"}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Button(
+                        onClick = { navController.navigate(Routes.OSMMap.route) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Select Route")
+                    }
+                }
             }
 
-            OutlinedTextField(
-                value = date,
-                onValueChange = { date = it },
-                label = { Text("Date (e.g. 01/07/2025)") },
-                modifier = textFieldModifier,
-                shape = textFieldShape,
-                colors = textFieldColors
-            )
+            // Date & Time Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(4.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Schedule",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    )
 
-            OutlinedTextField(
-                value = time,
-                onValueChange = { time = it },
-                label = { Text("Time (e.g. 10:00 AM)") },
-                modifier = textFieldModifier,
-                shape = textFieldShape,
-                colors = textFieldColors
-            )
+                    // Date Picker
+                    OutlinedTextField(
+                        value = date,
+                        onValueChange = { date = it },
+                        label = { Text("Date (DD/MM/YYYY)") },
+                        modifier = textFieldModifier,
+                        shape = textFieldShape,
+                        colors = textFieldColors
+                    )
 
-            OutlinedTextField(
-                value = seats,
-                onValueChange = { seats = it },
-                label = { Text("Seats Available") },
-                modifier = textFieldModifier,
-                shape = textFieldShape,
-                colors = textFieldColors
-            )
+                    // Time Section
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Selected Time: $formattedTime",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
 
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text("Phone Number") },
-                modifier = textFieldModifier,
-                shape = textFieldShape,
-                colors = textFieldColors
-            )
+                        // Hour Selector
+                        Text(
+                            text = "Hour",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items((1..12).toList()) { hour ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (selectedHour == hour) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.surface
+                                        )
+                                        .clickable { selectedHour = hour },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = hour.toString(),
+                                        color = if (selectedHour == hour) Color.White
+                                               else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
 
-            OutlinedTextField(
-                value = amount,
-                onValueChange = { amount = it },
-                label = { Text("Amount (e.g. ₹100)") },
-                modifier = textFieldModifier,
-                shape = textFieldShape,
-                colors = textFieldColors
-            )
+                        // Minute Selector
+                        Text(
+                            text = "Minutes",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(listOf(0, 15, 30, 45)) { minute ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (selectedMinute == minute) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.surface
+                                        )
+                                        .clickable { selectedMinute = minute },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = String.format("%02d", minute),
+                                        color = if (selectedMinute == minute) Color.White
+                                               else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
 
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Note (Optional)") },
-                modifier = textFieldModifier,
-                shape = textFieldShape,
-                colors = textFieldColors
-            )
+                        // AM/PM Selector
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(true to "AM", false to "PM").forEach { (amValue, label) ->
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (isAM == amValue) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.surface
+                                        )
+                                        .clickable { isAM = amValue },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isAM == amValue) Color.White
+                                               else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Ride Details Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(4.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Ride Details",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = seats,
+                            onValueChange = { seats = it },
+                            label = { Text("Seats") },
+                            modifier = Modifier.weight(1f),
+                            shape = textFieldShape,
+                            colors = textFieldColors
+                        )
+
+                        OutlinedTextField(
+                            value = amount,
+                            onValueChange = { amount = it },
+                            label = { Text("Price (₹)") },
+                            modifier = Modifier.weight(1f),
+                            shape = textFieldShape,
+                            colors = textFieldColors
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = phoneNumber,
+                        onValueChange = { phoneNumber = it },
+                        label = { Text("Contact Number") },
+                        modifier = textFieldModifier,
+                        shape = textFieldShape,
+                        colors = textFieldColors
+                    )
+
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text("Additional Notes (Optional)") },
+                        modifier = textFieldModifier,
+                        shape = textFieldShape,
+                        colors = textFieldColors,
+                        maxLines = 3
+                    )
+                }
+            }
 
             Button(
                 onClick = {
@@ -168,7 +362,7 @@ fun OfferRideScreen(
                             from = pickupAddress,
                             to = dropAddress,
                             date = date,
-                            time = time,
+                            time = formattedTime,
                             seatsAvailable = seats.toIntOrNull() ?: 1,
                             notes = note,
                             phoneNumber = phoneNumber,
@@ -192,12 +386,20 @@ fun OfferRideScreen(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF8C52FF),
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Post Ride")
+                Text(
+                    "Create Ride Offer",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp)) // So button isn't touching the bottom edge

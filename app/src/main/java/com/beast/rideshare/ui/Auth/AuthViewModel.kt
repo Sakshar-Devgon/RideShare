@@ -3,11 +3,14 @@ package com.beast.rideconnect
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.beast.rideshare.Model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthViewModel : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
     private val _authState = MutableLiveData<AuthState>()
     val authState: LiveData<AuthState> = _authState
@@ -41,7 +44,7 @@ class AuthViewModel : ViewModel() {
             }
     }
 
-    fun signup(name: String, email: String, password: String) {
+    fun signup(name: String, email: String, password: String, gender: String) {
         if (email.isEmpty() || password.isEmpty()) {
             _authState.value = AuthState.Error("Email or password cannot be empty")
             return
@@ -58,7 +61,8 @@ class AuthViewModel : ViewModel() {
                     user?.updateProfile(profileUpdates)
                         ?.addOnCompleteListener { updateTask ->
                             if (updateTask.isSuccessful) {
-                                _authState.value = AuthState.Authenticated
+                                // Create user profile document in Firestore
+                                createUserProfile(user.uid, name, email, gender)
                             } else {
                                 _authState.value = AuthState.Error(updateTask.exception?.message ?: "Profile update failed")
                             }
@@ -66,6 +70,26 @@ class AuthViewModel : ViewModel() {
                 } else {
                     _authState.value = AuthState.Error(task.exception?.message ?: "Signup failed")
                 }
+            }
+    }
+
+    private fun createUserProfile(userId: String, name: String, email: String, gender: String) {
+        val userProfile = User(
+            userId = userId,
+            name = name,
+            email = email,
+            phoneNumber = "",
+            gender = gender,
+            femaleMode = false
+        )
+
+        firestore.collection("users").document(userId)
+            .set(userProfile)
+            .addOnSuccessListener {
+                _authState.value = AuthState.Authenticated
+            }
+            .addOnFailureListener { exception ->
+                _authState.value = AuthState.Error(exception.message ?: "Failed to create user profile")
             }
     }
 

@@ -57,7 +57,7 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
         Text(
             text = "RideShare",
             style = MaterialTheme.typography.headlineLarge.copy(
-                color = Color(0xFF8C52FF),
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
             )
         )
@@ -68,7 +68,14 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                cursorColor = MaterialTheme.colorScheme.primary
+            )
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -78,7 +85,14 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                cursorColor = MaterialTheme.colorScheme.primary
+            )
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -90,8 +104,8 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
                 .height(60.dp),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF8C52FF),
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
             Text("Sign In", style = MaterialTheme.typography.titleLarge)
@@ -103,7 +117,8 @@ fun SignInScreen(navController: NavController, authViewModel: AuthViewModel) {
             }
         }) {
             Text(
-                "Don't have an account? Sign Up",
+                text = "Don't have an account? Sign Up",
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

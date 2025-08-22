@@ -10,6 +10,7 @@ data class Ride(
     val seatsAvailable: Int = 1,
     val notes: String = "",
     val amount: String = "", // 💰 New field to store offered amount
+    val rideType: String = "normal", // "normal" or "femaleOnly"
 
     // For acceptance tracking
     val rideId: String = "", // Firestore document ID

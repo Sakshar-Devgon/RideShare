@@ -126,7 +126,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Sakshar Devgon**
 - Email: sakshardevgon08@gmail.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@Sakshar-Devgon](https://github.com/Sakshar-Devgon)
+- LinkedIn: [sakshar-devgon](https://www.linkedin.com/in/sakshar-devgon-029568250/)
+
 
 ## 🙏 Acknowledgments
 

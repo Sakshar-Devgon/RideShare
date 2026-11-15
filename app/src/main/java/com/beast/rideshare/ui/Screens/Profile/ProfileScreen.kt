@@ -1,26 +1,35 @@
 package com.beast.rideshare.ui.Screens.Profile
 
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.beast.rideshare.Model.User
+import com.beast.rideshare.Navigation.Routes
+import com.beast.rideshare.ui.components.*
+import com.beast.rideshare.ui.theme.*
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,31 +42,47 @@ fun ProfileScreen(
     val context = LocalContext.current
     var user by remember { mutableStateOf<User?>(null) }
     var loading by remember { mutableStateOf(true) }
-    var saving by remember { mutableStateOf(false) }
-    
-    var selectedGender by remember { mutableStateOf("") }
-    var femaleMode by remember { mutableStateOf(false) }
 
-    // Load user profile on screen load
-    LaunchedEffect(Unit) {
-        // Check authentication state first
+    // Bottom Sheets
+    var showPersonalSheet by remember { mutableStateOf(false) }
+    var showWalletSheet by remember { mutableStateOf(false) }
+    var showPrefsSheet by remember { mutableStateOf(false) }
+    var showPrivacySheet by remember { mutableStateOf(false) }
+    var showSupportSheet by remember { mutableStateOf(false) }
+
+    // Toggle states from HTML
+    var notificationsEnabled by remember { mutableStateOf(true) }
+    var soundEnabled by remember { mutableStateOf(true) }
+    var autoAcceptEnabled by remember { mutableStateOf(false) }
+    var showPhoneToRiders by remember { mutableStateOf(true) }
+    var twoStepLogin by remember { mutableStateOf(false) }
+
+    // Wallet balance
+    var walletBalance by remember { mutableIntStateOf(500) }
+
+    // Personal info fields
+    var editName by remember { mutableStateOf("") }
+    var editEmail by remember { mutableStateOf("") }
+    var editPhone by remember { mutableStateOf("") }
+    var editGender by remember { mutableStateOf("Male") }
+
+    val isDarkTheme = themeManager.isDarkMode
+
+    fun loadProfile() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
             Toast.makeText(context, "Not authenticated. Please sign in again.", Toast.LENGTH_LONG).show()
             navController.popBackStack()
-            return@LaunchedEffect
+            return
         }
-
-        // Log authentication info for debugging
-        println("DEBUG: Current user: ${currentUser.uid}")
-        println("DEBUG: Email: ${currentUser.email}")
-        println("DEBUG: Email verified: ${currentUser.isEmailVerified}")
 
         profileViewModel.getUserProfile(
             onSuccess = { loadedUser ->
                 user = loadedUser
-                selectedGender = loadedUser.gender
-                femaleMode = loadedUser.femaleMode
+                editName = loadedUser.name
+                editEmail = loadedUser.email
+                editPhone = loadedUser.phoneNumber
+                editGender = loadedUser.gender.ifBlank { "Male" }
                 loading = false
             },
             onFailure = { error ->
@@ -67,308 +92,650 @@ fun ProfileScreen(
         )
     }
 
+    LaunchedEffect(Unit) {
+        loadProfile()
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Profile & Settings",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                    ) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+        containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            OrichuBottomNavBar(
+                currentRoute = "profile",
+                onNavigate = { route ->
+                    when (route) {
+                        "home" -> {
+                            navController.popBackStack()
+                            navController.navigate(Routes.Home.route)
+                        }
+                        "find" -> navController.navigate(Routes.FindRide.route)
+                        "offer1" -> navController.navigate(Routes.OfferRide.route)
+                        "activity" -> navController.navigate(Routes.WaitingScreen.route)
+                        "profile" -> Unit
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                }
             )
         }
-    ) { paddingValues ->
-        if (loading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFF8C52FF))
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 24.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Spacer(modifier = Modifier.height(6.dp))
 
-                // User Info Section
-                user?.let { currentUser ->
-                    Card(
+            // Header
+            OrichuHeader(
+                title = "Profile & Settings",
+                subtitle = "Preferences, security & appearance",
+                onBackClick = {
+                    navController.popBackStack()
+                    navController.navigate(Routes.Home.route)
+                }
+            )
+
+            if (loading) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = OrichuPrimary)
+                }
+            } else {
+                val userName = user?.name?.ifBlank { "Sakshar" } ?: "Sakshar"
+                val userEmail = user?.email?.ifBlank { "user@example.com" } ?: "user@example.com"
+                val userInitial = userName.take(1).uppercase()
+
+                // Profile Card (.card: avatar, name, email, verified badge, chevron)
+                OrichuCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(22.dp),
+                    contentPadding = PaddingValues(18.dp),
+                    onClick = { showPersonalSheet = true }
+                ) {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        elevation = CardDefaults.cardElevation(4.dp),
-                        shape = RoundedCornerShape(16.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        OrichuAvatar(
+                            initial = userInitial,
+                            size = 56.dp,
+                            fontSize = 20
+                        )
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "User Information",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                                text = userName,
+                                style = TextStyle(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             )
-                            Text("Name: ${currentUser.name}")
-                            Text("Email: ${currentUser.email}")
-                            if (currentUser.phoneNumber.isNotBlank()) {
-                                Text("Phone: ${currentUser.phoneNumber}")
-                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = userEmail,
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            OrichuVerifiedBadge(text = "Verified Member")
                         }
+
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "Edit Profile",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
-                // Gender Selection Section
-                Card(
+                // Settings Card with Rows (.card with padding: 2px 18px)
+                OrichuCard(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(22.dp),
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 2.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = "Gender",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF8C52FF)
-                            )
-                        )
-                        
-                        Column(
-                            modifier = Modifier.selectableGroup(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                        selected = (selectedGender == "male"),
-                                        onClick = { selectedGender = "male" },
-                                        role = Role.RadioButton
-                                    ),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = (selectedGender == "male"),
-                                    onClick = null,
-                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                                )
-                                Text(
-                                    text = "Male",
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                            
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                        selected = (selectedGender == "female"),
-                                        onClick = { selectedGender = "female" },
-                                        role = Role.RadioButton
-                                    ),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = (selectedGender == "female"),
-                                    onClick = null,
-                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
-                                )
-                                Text(
-                                    text = "Female",
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+                    // Personal Information
+                    OrichuSettingsRow(
+                        title = "Personal Information",
+                        leadingIcon = Icons.Default.Person,
+                        onClick = { showPersonalSheet = true }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
-                // Female Mode Section
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = "Female Mode",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF8C52FF)
-                            )
-                        )
-                        
-                        Text(
-                            text = "When enabled, your rides will be marked as female-only and only visible to other female users.",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray),
-                            fontSize = 14.sp
-                        )
-                        
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Enable Female Mode",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                    // Payment & Wallet
+                    OrichuSettingsRow(
+                        title = "Payment & Wallet",
+                        leadingIcon = Icons.Default.Payment,
+                        onClick = { showWalletSheet = true }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                    // Ride History
+                    OrichuSettingsRow(
+                        title = "Ride History",
+                        leadingIcon = Icons.Default.History,
+                        onClick = { navController.navigate(Routes.RideHistory.route) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                    // Notifications Toggle (.sw)
+                    OrichuSettingsRow(
+                        title = "Notifications",
+                        leadingIcon = Icons.Default.Notifications,
+                        trailingContent = {
                             Switch(
-                                checked = femaleMode,
-                                onCheckedChange = { femaleMode = it },
-                                enabled = selectedGender == "female", // Only enable for female users
+                                checked = notificationsEnabled,
+                                onCheckedChange = {
+                                    notificationsEnabled = it
+                                    Toast.makeText(context, "Notifications ${if (it) "on" else "off"}", Toast.LENGTH_SHORT).show()
+                                },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color(0xFF8C52FF),
-                                    checkedTrackColor = Color(0xFF8C52FF).copy(alpha = 0.5f)
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = OrichuPrimary,
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.outline
                                 )
                             )
                         }
-                        
-                        if (selectedGender != "female" && femaleMode) {
-                            // Reset female mode if gender is not female
-                            LaunchedEffect(selectedGender) {
-                                femaleMode = false
-                            }
-                        }
-                        
-                        if (selectedGender != "female") {
-                            Text(
-                                text = "Female Mode is only available for female users.",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray),
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-                }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
-                // Dark Mode Section
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = "Appearance",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        )
-
-                        Text(
-                            text = "Switch between light and dark theme for better viewing experience.",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
-                            fontSize = 14.sp
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Dark Mode",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                    // Dark Mode Toggle (.sw)
+                    OrichuSettingsRow(
+                        title = "Dark Mode",
+                        leadingIcon = Icons.Default.DarkMode,
+                        trailingContent = {
                             Switch(
-                                checked = themeManager.isDarkMode,
+                                checked = isDarkTheme,
                                 onCheckedChange = { themeManager.toggleDarkMode() },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = OrichuPrimary,
+                                    uncheckedThumbColor = Color.White,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.outline
                                 )
                             )
                         }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                    // App Preferences
+                    OrichuSettingsRow(
+                        title = "App Preferences",
+                        leadingIcon = Icons.Default.Tune,
+                        onClick = { showPrefsSheet = true }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                    // Privacy & Security
+                    OrichuSettingsRow(
+                        title = "Privacy & Security",
+                        leadingIcon = Icons.Default.Shield,
+                        onClick = { showPrivacySheet = true }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                    // Help & Support
+                    OrichuSettingsRow(
+                        title = "Help & Support",
+                        leadingIcon = Icons.Default.HelpOutline,
+                        onClick = { showSupportSheet = true }
+                    )
+                }
+
+                // Logout Row Card (.row.card with color: var(--bad))
+                OrichuCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(22.dp),
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
+                    onClick = {
+                        FirebaseAuth.getInstance().signOut()
+                        Toast.makeText(context, "Logged out", Toast.LENGTH_SHORT).show()
+                        navController.navigate(Routes.SignIn.route) {
+                            popUpTo(Routes.Home.route) { inclusive = true }
+                        }
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Logout",
+                            tint = OrichuBad,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Text(
+                            text = "Logout",
+                            style = TextStyle(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = OrichuBad
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = OrichuBad,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
 
-                // Save Button
-                Button(
-                    onClick = {
-                        if (selectedGender.isNotBlank()) {
-                            saving = true
-                            profileViewModel.updateGenderAndFemaleMode(
-                                gender = selectedGender,
-                                femaleMode = femaleMode,
-                                onSuccess = {
-                                    saving = false
-                                    Toast.makeText(context, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
-                                },
-                                onFailure = { error ->
-                                    saving = false
-                                    // Show detailed error message
-                                    val errorMessage = when {
-                                        error.contains("permission-denied") || error.contains("PERMISSION_DENIED") ->
-                                            "Permission denied. Please check Firestore security rules."
-                                        error.contains("not logged in") ->
-                                            "Please sign out and sign in again."
-                                        error.contains("network") ->
-                                            "Network error. Please check your internet connection."
-                                        else -> "Error: $error"
-                                    }
-                                    Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+        }
+    }
 
-                                    // Also log the full error for debugging
-                                    println("Profile update error: $error")
+    // Personal Information Bottom Sheet
+    if (showPersonalSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPersonalSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 36.dp)
+            ) {
+                Text(
+                    text = "Personal Information",
+                    style = TextStyle(
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                OrichuTextField(
+                    value = editName,
+                    onValueChange = { editName = it },
+                    placeholder = "Full Name",
+                    leadingIcon = Icons.Default.Person
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OrichuTextField(
+                    value = editEmail,
+                    onValueChange = { editEmail = it },
+                    placeholder = "Email Address",
+                    leadingIcon = Icons.Default.Email
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OrichuTextField(
+                    value = editPhone,
+                    onValueChange = { editPhone = it },
+                    placeholder = "Phone number",
+                    leadingIcon = Icons.Default.Phone,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Gender",
+                    style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf("Male", "Female").forEach { g ->
+                        val isSelected = editGender.equals(g, ignoreCase = true)
+                        OrichuChip(
+                            text = g,
+                            selected = isSelected,
+                            onClick = { editGender = g },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OrichuButton(
+                    text = "Save changes",
+                    onClick = {
+                        val trimmedName = editName.trim()
+                        val trimmedEmail = editEmail.trim()
+                        if (trimmedName.isNotBlank() && trimmedEmail.contains("@")) {
+                            val updatedUser = user?.copy(
+                                name = trimmedName,
+                                email = trimmedEmail,
+                                phoneNumber = editPhone.trim(),
+                                gender = editGender.lowercase(),
+                                femaleMode = (editGender.equals("Female", ignoreCase = true) && user?.femaleMode == true)
+                            ) ?: User(
+                                userId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+                                name = trimmedName,
+                                email = trimmedEmail,
+                                phoneNumber = editPhone.trim(),
+                                gender = editGender.lowercase(),
+                                femaleMode = false
+                            )
+
+                            profileViewModel.updateUserProfile(
+                                user = updatedUser,
+                                onSuccess = {
+                                    user = updatedUser
+                                    showPersonalSheet = false
+                                    Toast.makeText(context, "Changes saved", Toast.LENGTH_SHORT).show()
+                                },
+                                onFailure = { err ->
+                                    Toast.makeText(context, "Error: $err", Toast.LENGTH_SHORT).show()
                                 }
                             )
                         } else {
-                            Toast.makeText(context, "Please select your gender.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Enter your name and a valid email address.", Toast.LENGTH_SHORT).show()
                         }
-                    },
+                    }
+                )
+            }
+        }
+    }
+
+    // Payment & Wallet Bottom Sheet
+    if (showWalletSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showWalletSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 36.dp)
+            ) {
+                Text(
+                    text = "Wallet",
+                    style = TextStyle(
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                // Purple gradient balance card
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8C52FF),
-                        contentColor = Color.White
-                    ),
-                    enabled = !saving
-                ) {
-                    if (saving) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(
+                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                listOf(Color(0xFF4C1D95), Color(0xFF8B5CF6))
+                            )
                         )
-                    } else {
+                        .padding(20.dp)
+                ) {
+                    Column {
                         Text(
-                            "Save Changes",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            text = "Available balance",
+                            style = TextStyle(fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "₹$walletBalance",
+                            style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = "Add money",
+                    style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf(100, 200, 500).forEach { amount ->
+                        OrichuChip(
+                            text = "+₹$amount",
+                            selected = false,
+                            onClick = {
+                                walletBalance += amount
+                                Toast.makeText(context, "₹$amount added to wallet", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // App Preferences Bottom Sheet
+    if (showPrefsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPrefsSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 36.dp)
+            ) {
+                Text(
+                    text = "App Preferences",
+                    style = TextStyle(
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Sound Effects", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Switch(
+                        checked = soundEnabled,
+                        onCheckedChange = {
+                            soundEnabled = it
+                            Toast.makeText(context, "Sound ${if (it) "on" else "off"}", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = SwitchDefaults.colors(checkedTrackColor = OrichuPrimary)
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Auto-accept bookings", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Switch(
+                        checked = autoAcceptEnabled,
+                        onCheckedChange = {
+                            autoAcceptEnabled = it
+                            Toast.makeText(context, "Auto-accept ${if (it) "on" else "off"}", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = SwitchDefaults.colors(checkedTrackColor = OrichuPrimary)
+                    )
+                }
+            }
+        }
+    }
+
+    // Privacy & Security Bottom Sheet
+    if (showPrivacySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showPrivacySheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            var newPassword by remember { mutableStateOf("") }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 36.dp)
+            ) {
+                Text(
+                    text = "Privacy & Security",
+                    style = TextStyle(
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Show phone to riders", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Switch(
+                        checked = showPhoneToRiders,
+                        onCheckedChange = { showPhoneToRiders = it },
+                        colors = SwitchDefaults.colors(checkedTrackColor = OrichuPrimary)
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Two-step login", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium))
+                    Switch(
+                        checked = twoStepLogin,
+                        onCheckedChange = { twoStepLogin = it },
+                        colors = SwitchDefaults.colors(checkedTrackColor = OrichuPrimary)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Change password",
+                    style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OrichuTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    placeholder = "New password",
+                    leadingIcon = Icons.Default.Lock,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OrichuButton(
+                    text = "Update password",
+                    onClick = {
+                        if (newPassword.length >= 6) {
+                            FirebaseAuth.getInstance().currentUser?.updatePassword(newPassword)
+                                ?.addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(context, "Password updated", Toast.LENGTH_SHORT).show()
+                                        showPrivacySheet = false
+                                    } else {
+                                        Toast.makeText(context, task.exception?.message ?: "Failed to update", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                        } else {
+                            Toast.makeText(context, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    // Help & Support Bottom Sheet
+    if (showSupportSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSupportSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            var msg by remember { mutableStateOf("") }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 36.dp)
+            ) {
+                Text(
+                    text = "Help & Support",
+                    style = TextStyle(fontSize = 19.sp, fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.padding(bottom = 14.dp)
+                )
+
+                Text(
+                    text = "• How do I reserve a seat?\nOpen Find a Ride, pick a journey and tap Reserve Seat.",
+                    style = TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 19.sp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "• How do I offer a ride?\nTap the + button, set your route, time, seats and price, then publish.",
+                    style = TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 19.sp)
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OrichuTextField(
+                    value = msg,
+                    onValueChange = { msg = it },
+                    placeholder = "Describe your issue...",
+                    singleLine = false,
+                    minLines = 3,
+                    maxLines = 4
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OrichuButton(
+                    text = "Send message",
+                    onClick = {
+                        if (msg.isNotBlank()) {
+                            Toast.makeText(context, "Message sent. We will reply by email", Toast.LENGTH_SHORT).show()
+                            showSupportSheet = false
+                        } else {
+                            Toast.makeText(context, "Write your message first", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
             }
         }
     }
